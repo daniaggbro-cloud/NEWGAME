@@ -1,7 +1,8 @@
 -- core/localization.lua
 -- Localized strings for Murderers VS Sheriffs
 
-if not Mega then Mega = {} end
+getgenv().Mega = getgenv().Mega or {}
+local Mega = getgenv().Mega
 
 Mega.Localization = {
     CurrentLanguage = "ru",
