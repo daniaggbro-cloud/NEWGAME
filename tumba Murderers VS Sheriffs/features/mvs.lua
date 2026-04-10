@@ -1,114 +1,148 @@
 -- features/mvs.lua
--- Core features for Murderers VS Sheriffs
+-- TumbaHub MVS Features (Elite Edition)
+-- Implements ESP, Speed, Silent Aim, Kill Aura, and Skin Changer
 
 getgenv().Mega = getgenv().Mega or {}
 local Mega = getgenv().Mega
-Mega.Features = Mega.Features or {}
-
 local Services = Mega.Services
-local LocalPlayer = Services.LocalPlayer
-local RunService = Services.RunService
+local Packages = Mega.Packages or {}
 
-local MVS = {}
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local Camera = workspace.CurrentCamera
 
--- ESP Logic
-local highlights = {}
+-- // SETTINGS (Initialize if not present)
+Mega.Settings = Mega.Settings or {
+    ESP = false,
+    AutoStab = false,
+    KillAura = false,
+    SilentAim = false,
+    SilentAimFOV = 150,
+    Speed = 16,
+    JumpPower = 50,
+    EquippedSkin = "Default"
+}
 
-local function updateESP()
-    if not Mega.States.MVS.ESP.Enabled then
-        for _, h in pairs(highlights) do h:Destroy() end
-        table.clear(highlights)
-        return
-    end
-
-    for _, player in pairs(Services.Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local char = player.Character
-            local role = player:GetAttribute("Role") or "Innocent"
-            
-            -- Filter
-            local shown = false
-            if role == "Murderer" and Mega.States.MVS.ESP.ShowMurderer then shown = true
-            elseif role == "Sheriff" and Mega.States.MVS.ESP.ShowSheriff then shown = true
-            elseif Mega.States.MVS.ESP.ShowInnocent then shown = true end
-
-            if shown then
-                if not highlights[player] then
-                    local h = Instance.new("Highlight")
-                    h.Name = "TumbaESP"
-                    h.FillTransparency = 0.5
-                    h.OutlineTransparency = 0
-                    h.Parent = char
-                    highlights[player] = h
-                end
-                
-                local color = Color3.fromRGB(0, 255, 0) -- Green
-                if role == "Murderer" then color = Color3.fromRGB(255, 0, 0)
-                elseif role == "Sheriff" then color = Color3.fromRGB(0, 0, 255) end
-                
-                highlights[player].FillColor = color
-                highlights[player].OutlineColor = color
-            else
-                if highlights[player] then
-                    highlights[player]:Destroy()
-                    highlights[player] = nil
-                end
-            end
-        end
-    end
-end
-
--- Auto-Stab
-local function doAutoStab()
-    if not Mega.States.MVS.AutoStab.Enabled then return end
+-- // UTILS
+local function GetClosestPlayerToCursor()
+    local target = nil
+    local dist = Mega.Settings.SilentAimFOV or 150
     
-    local char = LocalPlayer.Character
-    if not char then return end
-    
-    local role = LocalPlayer:GetAttribute("Role")
-    if role ~= "Murderer" then return end
-    
-    local knife = char:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
-    if not knife then return end
-
-    for _, player in pairs(Services.Players:GetPlayers()) do
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local dist = (char.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if dist <= Mega.States.MVS.AutoStab.Range then
-                -- Fire Stab Remote (Dynamically find correct remote)
-                local remoteName = (Mega.Packages and Mega.Packages.remotes and Mega.Packages.remotes.Stab) or "KnifeKill"
-                local remote = Services.ReplicatedStorage:FindFirstChild(remoteName)
-                
-                if remote then
-                    remote:FireServer(player.Character.HumanoidRootPart)
+            local pos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+            if onScreen then
+                local magnitude = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
+                if magnitude < dist then
+                    dist = magnitude
+                    target = player
                 end
             end
         end
     end
+    return target
 end
 
--- Loops
-task.spawn(function()
-    while true do
-        pcall(updateESP)
-        task.wait(1)
-    end
+-- // COMBAT: SILENT AIM
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1
+FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+FOVCircle.Filled = false
+FOVCircle.Transparency = 1
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    FOVCircle.Visible = Mega.Settings.SilentAim
+    FOVCircle.Radius = Mega.Settings.SilentAimFOV
+    FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
 end)
 
-RunService.Heartbeat:Connect(function()
-    pcall(doAutoStab)
+-- Metatable Hook for Silent Aim
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
     
-    -- Speedhack
-    if Mega.States.Player.Speed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = Mega.States.Player.SpeedValue
+    if Mega.Settings.SilentAim and method == "FireServer" and self.Name == (Packages.remotes and Packages.remotes.Shoot or "fire") then
+        local target = GetClosestPlayerToCursor()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            -- Redirect shot to target's head
+            args[1] = target.Character.Head.Position
+            return oldNamecall(self, table.unpack(args))
+        end
+    end
+    
+    return oldNamecall(self, ...)
+end)
+
+-- // COMBAT: KILL AURA (Aura Stab)
+spawn(function()
+    while task.wait(0.1) do
+        if Mega.Settings.KillAura then
+            local reach = 15
+            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local p_distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                    if p_distance <= reach then
+                        local remoteName = Packages.remotes and Packages.remotes.Stab or "KnifeKill"
+                        local remote = game:GetService("ReplicatedStorage"):FindFirstChild(remoteName, true)
+                        if remote then
+                            remote:FireServer(player)
+                        end
+                    end
+                end
+            end
+        end
     end
 end)
 
-Services.UserInputService.JumpRequest:Connect(function()
-    if Mega.States.Player.InfiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+-- // CUSTOMIZATION: SKIN CHANGER
+Mega.Skins = {}
+function Mega.Skins.Equip(skinName)
+    local remoteName = Packages.remotes and Packages.remotes.Equip or "EquipItem"
+    local remote = game:GetService("ReplicatedStorage"):FindFirstChild(remoteName, true)
+    if remote then
+        remote:FireServer(skinName)
+        print("🎭 Skin Changer: Equipped " .. tostring(skinName))
+    else
+        warn("🎭 Skin Changer: Remote not found!")
+    end
+end
+
+-- // MOVEMENT FEATURES
+game:GetService("RunService").Heartbeat:Connect(function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = Mega.Settings.Speed
+        LocalPlayer.Character.Humanoid.JumpPower = Mega.Settings.JumpPower
     end
 end)
 
-Mega.Features.MVS = MVS
-return MVS
+-- // VISUALS: ESP
+spawn(function()
+    while task.wait(1) do
+        if Mega.Settings.ESP then
+            for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and not player.Character:FindFirstChild("MegaESP") then
+                    local highlight = Instance.new("Highlight")
+                    highlight.Name = "MegaESP"
+                    highlight.Parent = player.Character
+                    highlight.FillColor = Color3.fromRGB(255, 255, 255)
+                    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+                    
+                    -- Dynamic coloring from metadata
+                    task.spawn(function()
+                        while player.Character and player.Character:FindFirstChild("MegaESP") do
+                            if player.TeamColor == LocalPlayer.TeamColor then
+                                highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                            else
+                                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                            end
+                            task.wait(2)
+                        end
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+print("🛡️ MVS Elite Features Loaded!")
