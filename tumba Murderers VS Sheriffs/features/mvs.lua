@@ -75,8 +75,10 @@ local function doAutoStab()
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local dist = (char.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
             if dist <= Mega.States.MVS.AutoStab.Range then
-                -- Fire Stab Remote
-                local remote = Services.ReplicatedStorage:FindFirstChild("StabEvent") -- Fallback or from packages
+                -- Fire Stab Remote (Dynamically find correct remote)
+                local remoteName = (Mega.Packages and Mega.Packages.remotes and Mega.Packages.remotes.Stab) or "KnifeKill"
+                local remote = Services.ReplicatedStorage:FindFirstChild(remoteName)
+                
                 if remote then
                     remote:FireServer(player.Character.HumanoidRootPart)
                 end

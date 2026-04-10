@@ -79,6 +79,7 @@ end
 RunInitPhase("core", {
     "core/settings.lua",
     "core/localization.lua",
+    "core/dumper.lua",
     "packages.json"
 })
 

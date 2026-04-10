@@ -1,19 +1,23 @@
 {
-    "game_configs": {
-        "135856908115931": {
-            "name": "Murderers VS Sheriffs",
-            "remotes": {
-                "Shoot": "ShootEvent",
-                "Stab": "StabEvent",
-                "Throw": "ThrowKnife",
-                "Reload": "ReloadEvent",
-                "RoleUpdate": "RoleAssignment"
-            },
-            "constants": {
-                "KnifeRange": 15,
-                "HeadshotMultiplier": 1.5,
-                "ReloadTime": 2.5
-            }
-        }
-    }
+    "remotes": {
+        "Attack": "KnifeKill",
+        "Shoot": "Shoot",
+        "Reload": "Reload",
+        "Equip": "EquipItem",
+        "Stab": "KnifeKill",
+        "Throw": "KnifeKill",
+        "Interact": "RequestClaimFreeItem",
+        "SetRole": "Mod",
+        "Purchase": "BuyCase",
+        "OpenCase": "CaseBought",
+        "Emote": "PlaySound",
+        "ToggleInventory": "Equip",
+        "ReportPlayer": "Killed",
+        "Vote": "MapVote",
+        "Spectate": "Spectate"
+    },
+    "knives_meta.json": "{\"KnifeMeta\":{\"classic\":{\"name\":\"Classic Knife\",\"rarity\":\"Common\"},\"ruby\":{\"name\":\"Ruby Dagger\",\"rarity\":\"Rare\"},\"emerald\":{\"name\":\"Emerald Blade\",\"rarity\":\"Epic\"},\"void\":{\"name\":\"Void Sickle\",\"rarity\":\"Godly\"},\"titan\":{\"name\":\"Titan Slasher\",\"rarity\":\"Mythic\"}}}",
+    "sounds_meta.json": "{\"GameSounds\":{\"KnifeSwing\":\"rbxassetid://134495455581901\",\"GunFire\":\"rbxassetid://10649780360\",\"Success\":\"rbxassetid://9368744375\"}}",
+    "constants.json": "{\"CombatConstants\":{\"KnifeReach\":15,\"SilentAimFOV\":25},\"MovementConstants\":{\"WalkSpeed\":16,\"JumpPower\":50}}",
+    "_dump_info": "Real data synced from packages_dump.json on 2026-04-11"
 }
