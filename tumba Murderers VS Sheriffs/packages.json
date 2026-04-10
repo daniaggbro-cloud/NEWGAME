@@ -1,23 +1,28 @@
 {
     "remotes": {
         "Attack": "KnifeKill",
-        "Shoot": "Shoot",
+        "Shoot": "fire",
         "Reload": "Reload",
         "Equip": "EquipItem",
         "Stab": "KnifeKill",
-        "Throw": "KnifeKill",
+        "Throw": "Throw",
+        "Fling": "FlingKnifeEvent",
+        "Slash": "Slash",
         "Interact": "RequestClaimFreeItem",
         "SetRole": "Mod",
         "Purchase": "BuyCase",
         "OpenCase": "CaseBought",
         "Emote": "PlaySound",
-        "ToggleInventory": "Equip",
-        "ReportPlayer": "Killed",
         "Vote": "MapVote",
-        "Spectate": "Spectate"
+        "Spectate": "Spectate",
+        "Trade": "TradeItem",
+        "UpdateSettings": "UpdatePlayerProfileSettings"
     },
-    "knives_meta.json": "{\"KnifeMeta\":{\"classic\":{\"name\":\"Classic Knife\",\"rarity\":\"Common\"},\"ruby\":{\"name\":\"Ruby Dagger\",\"rarity\":\"Rare\"},\"emerald\":{\"name\":\"Emerald Blade\",\"rarity\":\"Epic\"},\"void\":{\"name\":\"Void Sickle\",\"rarity\":\"Godly\"},\"titan\":{\"name\":\"Titan Slasher\",\"rarity\":\"Mythic\"}}}",
-    "sounds_meta.json": "{\"GameSounds\":{\"KnifeSwing\":\"rbxassetid://134495455581901\",\"GunFire\":\"rbxassetid://10649780360\",\"Success\":\"rbxassetid://9368744375\"}}",
-    "constants.json": "{\"CombatConstants\":{\"KnifeReach\":15,\"SilentAimFOV\":25},\"MovementConstants\":{\"WalkSpeed\":16,\"JumpPower\":50}}",
-    "_dump_info": "Real data synced from packages_dump.json on 2026-04-11"
+    "rarity_meta.json": "{\"Ancient\":{\"Index\":-7,\"Rarity\":2},\"Legendary\":{\"Index\":-4,\"Rarity\":7},\"Common\":{\"Index\":-1,\"Rarity\":60},\"Mythic\":{\"Index\":-5,\"Rarity\":4},\"Exclusive\":{\"Index\":-8},\"Uncommon\":{\"Index\":-2,\"Rarity\":16},\"Rare\":{\"Index\":-3,\"Rarity\":10}}",
+    "codes_meta.json": "{\"BACK\":{\"RewardName\":\"1000\"},\"GAME\":{\"RewardName\":\"2500\"},\"HOTEL\":{\"RewardName\":\"FlareGun\"},\"FREE\":{\"RewardName\":\"SeaSword\"},\"EGGHUNT\":{\"RewardName\":\"1500\"}}",
+    "market_meta.json": "{\"Gamepasses\":{\"VIP\":1222168260,\"DoubleCoins\":1222276267,\"DragonPack\":1222006279,\"BatwingPack\":1222054278}}",
+    "assets_manifest.json": "{\"Sounds\":{\"KnifeSwing\":\"rbxassetid://134495455581901\",\"GunFire\":\"rbxassetid://10649780360\",\"Success\":\"rbxassetid://136993031050456\"}}",
+    "items_meta.json": "{\"DeadmanShovel\":{\"Rarity\":\"Mythic\",\"Type\":\"Knife\"},\"TitanSword\":{\"Rarity\":\"Mythic\",\"Type\":\"Knife\"},\"DemonicSword\":{\"Rarity\":\"Mythic\",\"Type\":\"Knife\"},\"DragonFlameBlade\":{\"Rarity\":\"Mythic\",\"Type\":\"Knife\"},\"Revolver_Default\":{\"Rarity\":\"Common\",\"Type\":\"Gun\"},\"DefaultKnife\":{\"Rarity\":\"Common\",\"Type\":\"Knife\"}}",
+    "boxes_meta.json": "{\"Mythic Box #1\":{\"Price\":1500,\"Items\":[\"FlintGun\",\"SciFiGun\",\"Injection\"]},\"Knife Box #1\":{\"Price\":500,\"Items\":[\"Katana\",\"PumpkinAxe\",\"Sickle\"]}}",
+    "constants.json": "{\"Combat\":{\"Reach\":15,\"FOV\":25},\"Visuals\":{\"MurdererColor\":[255,0,0],\"SheriffColor\":[0,0,255]}}"
 }
