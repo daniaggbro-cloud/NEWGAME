@@ -1,43 +1,110 @@
 -- main.lua
--- Entry point for Murderers VS Sheriffs Standalone Cheat
--- Premium TumbaHub Design
+-- Tumba MVS Standalone Cheat - Cloud Edition
+-- Repository: https://github.com/daniaggbro-cloud/NEWGAME
 
--- Initialize Global Table
-shared.Mega = {}
+shared.Mega = shared.Mega or {}
 local Mega = shared.Mega
 
--- Load Core Modules
-local function LoadLocal(path)
-    local success, result = pcall(function()
-        return loadstring(readfile("tumba Murderers VS Sheriffs/" .. path))()
-    end)
-    if not success then
-        warn("Failed to load: " .. path .. " | " .. tostring(result))
+local baseURL = "https://raw.githubusercontent.com/daniaggbro-cloud/NEWGAME/main/tumba%20Murderers%20VS%20Sheriffs/"
+local localFolder = "tumba Murderers VS Sheriffs/"
+
+-- Universal Module Loader
+function Mega.LoadModule(path)
+    if not path:find("%.lua$") and not path:find("%.json$") then path = path .. ".lua" end
+    
+    local content = nil
+    local success = false
+    
+    -- 1. Try Local File (Development Mode)
+    if isfile and readfile then
+        local fullLocalPath = localFolder .. path
+        if isfile(fullLocalPath) then
+            success, content = pcall(function() return readfile(fullLocalPath) end)
+        end
     end
-    return result
+    
+    -- 2. Try Cloud (Cloud Mode)
+    if not success or not content then
+        local url = baseURL .. path
+        success, content = pcall(function() return game:HttpGet(url) end)
+        if success and content:find("404: Not Found") then success = false; content = nil end
+    end
+    
+    if success and content then
+        if path:find("%.json$") then
+            return game:GetService("HttpService"):JSONDecode(content)
+        end
+        
+        local chunk, err = loadstring(content)
+        if chunk then
+            local success, err = pcall(chunk)
+            if not success then warn("Execution error in module:", path, "|", err) end
+            return success
+        else
+            warn("Syntax error in module:", path, "|", err)
+        end
+    else
+        warn("Failed to load module:", path)
+    end
+    return false
 end
 
--- Bootstrap
-LoadLocal("core/services.lua")
-LoadLocal("core/settings.lua")
-LoadLocal("core/localization.lua")
-LoadLocal("library/ui_builder.lua")
+-- Bootstrap Services
+local servicesContent = game:HttpGet(baseURL .. "core/services.lua")
+loadstring(servicesContent)()
 
-local Services = Mega.Services
-local UI = Mega.UI
-local GetText = Mega.GetText
+-- Initialization Sequence
+local loaderScript = game:HttpGet(baseURL .. "gui/loader_screen.lua")
+loadstring(loaderScript)()
 
--- Load Features
-LoadLocal("features/mvs.lua")
+local loaderUI = Mega.Loader.Create()
 
--- GUI Implementation
-function Mega.InitGUI()
+local function InitPhase(id, list)
+    loaderUI.SetStage(id)
+    local count = #list
+    for i, path in ipairs(list) do
+        loaderUI.Update((i / count) * 100, "Syncing: " .. path)
+        Mega.LoadModule(path)
+        task.wait(0.1) -- Visual delay for smooth loading
+    end
+end
+
+-- PHASE 1: CORE
+InitPhase("core", {
+    "core/settings.lua",
+    "core/localization.lua",
+    "packages.json"
+})
+
+-- PHASE 2: LIBRARY
+InitPhase("library", {
+    "library/ui_builder.lua"
+})
+
+-- PHASE 3: FEATURES
+InitPhase("features", {
+    "features/mvs.lua"
+})
+
+-- PHASE 4: UI
+loaderUI.SetStage("ui")
+loaderUI.Update(100, "Building Interface...")
+task.wait(0.5)
+
+-- Main GUI Initialization (Inlined or Loaded)
+-- Using the logic from previous main.lua but integrated into the phase system
+local function startGUI()
+    local Services = Mega.Services
+    local UI = Mega.UI
+    local GetText = Mega.GetText
+
     local TumbaGUI = Instance.new("ScreenGui")
     TumbaGUI.Name = "MVS_Standalone"
     TumbaGUI.Parent = Services.CoreGui
     TumbaGUI.Enabled = true
     TumbaGUI.ResetOnSpawn = false
-    
+    Mega.Objects = { GUI = TumbaGUI }
+
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, 600, 0, 400)
@@ -148,21 +215,19 @@ function Mega.InitGUI()
 
     -- Settings Tab Content
     UI.CreateSection(settingsTab, "section_settings_menu")
-    UI.CreateKeybindButton(settingsTab, "keybind_menu", "Keybinds.Menu", function(key)
-        -- Global keybind logic handled in main loop
-    end)
+    UI.CreateKeybindButton(settingsTab, "keybind_menu", "Keybinds.Menu")
 
-    -- Finalize
     setTab("MVS")
     
-    -- Toggle logic
+    -- Menu Toggle
     Services.UserInputService.InputBegan:Connect(function(input, gp)
         if not gp and input.KeyCode.Name == Mega.States.Keybinds.Menu then
             TumbaGUI.Enabled = not TumbaGUI.Enabled
         end
     end)
-    
-    print("MVS Standalone Initialized!")
 end
 
-Mega.InitGUI()
+startGUI()
+loaderUI.Update(100, "LOADED SUCCESSFULLY!")
+task.wait(1)
+loaderUI.Destroy()
