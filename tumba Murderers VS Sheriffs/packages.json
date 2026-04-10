@@ -1,0 +1,19 @@
+{
+    "game_configs": {
+        "135856908115931": {
+            "name": "Murderers VS Sheriffs",
+            "remotes": {
+                "Shoot": "ShootEvent",
+                "Stab": "StabEvent",
+                "Throw": "ThrowKnife",
+                "Reload": "ReloadEvent",
+                "RoleUpdate": "RoleAssignment"
+            },
+            "constants": {
+                "KnifeRange": 15,
+                "HeadshotMultiplier": 1.5,
+                "ReloadTime": 2.5
+            }
+        }
+    }
+}
