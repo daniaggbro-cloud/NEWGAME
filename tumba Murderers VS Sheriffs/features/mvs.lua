@@ -1,7 +1,8 @@
 -- features/mvs.lua
 -- Core features for Murderers VS Sheriffs
 
-if not Mega then Mega = {} end
+getgenv().Mega = getgenv().Mega or {}
+local Mega = getgenv().Mega
 Mega.Features = Mega.Features or {}
 
 local Services = Mega.Services

@@ -1,7 +1,8 @@
 -- library/ui_builder.lua
 -- GUI factory for MvS standalone project (TumbaHub Design)
 
-if not Mega then Mega = {} end
+getgenv().Mega = getgenv().Mega or {}
+local Mega = getgenv().Mega
 Mega.UI = {}
 
 local GetText = Mega.GetText

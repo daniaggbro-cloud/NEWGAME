@@ -1,9 +1,9 @@
 -- main.lua
--- Tumba MVS Standalone Cheat - Cloud Edition
+-- Tumba MVS Standalone Cheat - Cloud Edition (Titan Engine)
 -- Repository: https://github.com/daniaggbro-cloud/NEWGAME
 
-shared.Mega = shared.Mega or {}
-local Mega = shared.Mega
+getgenv().Mega = getgenv().Mega or {}
+local Mega = getgenv().Mega
 
 local baseURL = "https://raw.githubusercontent.com/daniaggbro-cloud/NEWGAME/main/tumba%20Murderers%20VS%20Sheriffs/"
 local localFolder = "tumba Murderers VS Sheriffs/"
@@ -27,72 +27,77 @@ function Mega.LoadModule(path)
     if not success or not content then
         local url = baseURL .. path
         success, content = pcall(function() return game:HttpGet(url) end)
-        if success and content:find("404: Not Found") then success = false; content = nil end
+        if success and (content:find("404: Not Found") or content == "") then success = false; content = nil end
     end
     
     if success and content then
         if path:find("%.json$") then
-            return game:GetService("HttpService"):JSONDecode(content)
+            local decoded = game:GetService("HttpService"):JSONDecode(content)
+            Mega.Packages = decoded
+            return decoded
         end
         
         local chunk, err = loadstring(content)
         if chunk then
-            local success, err = pcall(chunk)
+            local success, result = pcall(chunk)
             if not success then warn("Execution error in module:", path, "|", err) end
-            return success
+            return result or true
         else
             warn("Syntax error in module:", path, "|", err)
         end
     else
         warn("Failed to load module:", path)
     end
-    return false
+    return nil
 end
 
--- Bootstrap Services
-local servicesContent = game:HttpGet(baseURL .. "core/services.lua")
-loadstring(servicesContent)()
+-- --- INITIALIZATION START ---
 
--- Initialization Sequence
-local loaderScript = game:HttpGet(baseURL .. "gui/loader_screen.lua")
-loadstring(loaderScript)()
+-- 1. Load Core Services (Bootstrap)
+Mega.LoadModule("core/services.lua")
+
+-- 2. Load Titan Loader
+Mega.LoadModule("gui/loader_screen.lua")
+
+if not Mega.Loader then
+    error("TumbaHub: Critical Error - Loader module not found! Check GitHub path or internet connection.")
+end
 
 local loaderUI = Mega.Loader.Create()
 
-local function InitPhase(id, list)
+local function RunInitPhase(id, list)
     loaderUI.SetStage(id)
     local count = #list
     for i, path in ipairs(list) do
-        loaderUI.Update((i / count) * 100, "Syncing: " .. path)
+        loaderUI.Update((i / count) * 100, "Downloading: " .. path)
         Mega.LoadModule(path)
-        task.wait(0.1) -- Visual delay for smooth loading
+        task.wait(0.05)
     end
 end
 
 -- PHASE 1: CORE
-InitPhase("core", {
+RunInitPhase("core", {
     "core/settings.lua",
     "core/localization.lua",
     "packages.json"
 })
 
--- PHASE 2: LIBRARY
-InitPhase("library", {
-    "library/ui_builder.lua"
+-- PHASE 2: FEATURES
+RunInitPhase("features", {
+    "features/mvs.lua"
 })
 
--- PHASE 3: FEATURES
-InitPhase("features", {
-    "features/mvs.lua"
+-- PHASE 3: LIBRARY
+RunInitPhase("library", {
+    "library/ui_builder.lua"
 })
 
 -- PHASE 4: UI
 loaderUI.SetStage("ui")
-loaderUI.Update(100, "Building Interface...")
+loaderUI.Update(80, "Building GUI Components...")
 task.wait(0.5)
 
--- Main GUI Initialization (Inlined or Loaded)
--- Using the logic from previous main.lua but integrated into the phase system
+-- Main GUI Initialization
 local function startGUI()
     local Services = Mega.Services
     local UI = Mega.UI
@@ -108,7 +113,7 @@ local function startGUI()
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, 600, 0, 400)
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -230) -- Slightly higher for drama
     MainFrame.BackgroundColor3 = Mega.Settings.Menu.BackgroundColor
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
@@ -131,17 +136,17 @@ local function startGUI()
     Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 10)
 
     local AppTitle = Instance.new("TextLabel")
-    AppTitle.Size = UDim2.new(1, 0, 0, 40)
+    AppTitle.Size = UDim2.new(1, 0, 0, 50)
     AppTitle.BackgroundTransparency = 1
     AppTitle.Text = "TUMBA MVS"
     AppTitle.TextColor3 = Mega.Settings.Menu.AccentColor
-    AppTitle.TextSize = 18
+    AppTitle.TextSize = 20
     AppTitle.Font = Enum.Font.GothamBlack
     AppTitle.Parent = Sidebar
 
     local TabButtonsContainer = Instance.new("Frame")
-    TabButtonsContainer.Size = UDim2.new(1, -10, 1, -50)
-    TabButtonsContainer.Position = UDim2.new(0, 5, 0, 45)
+    TabButtonsContainer.Size = UDim2.new(1, -10, 1, -60)
+    TabButtonsContainer.Position = UDim2.new(0, 5, 0, 55)
     TabButtonsContainer.BackgroundTransparency = 1
     TabButtonsContainer.Parent = Sidebar
     Instance.new("UIListLayout", TabButtonsContainer).Padding = UDim.new(0, 5)
@@ -176,14 +181,14 @@ local function startGUI()
 
     local function createTabButton(name, textKey)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, 0, 0, 35)
+        btn.Size = UDim2.new(1, 0, 0, 38)
         btn.BackgroundColor3 = Mega.Settings.Menu.ElementColor
-        btn.Text = GetText(textKey)
+        btn.Text = GetText(textKey) or name
         btn.TextColor3 = Mega.Settings.Menu.TextColor
         btn.Font = Enum.Font.GothamBold
         btn.TextSize = 13
         btn.Parent = TabButtonsContainer
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
         btn.MouseButton1Click:Connect(function() setTab(name) end)
     end
 
@@ -228,6 +233,6 @@ local function startGUI()
 end
 
 startGUI()
-loaderUI.Update(100, "LOADED SUCCESSFULLY!")
+loaderUI.Update(100, "READY FOR MURDER.")
 task.wait(1)
 loaderUI.Destroy()

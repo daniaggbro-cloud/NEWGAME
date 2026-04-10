@@ -1,7 +1,8 @@
 -- core/settings.lua
 -- Contains default settings and states for Murderers VS Sheriffs
 
-if not Mega then Mega = {} end
+getgenv().Mega = getgenv().Mega or {}
+local Mega = getgenv().Mega
 
 Mega.VERSION = "1.0.0"
 Mega.BUILD_DATE = os.date("%Y.%m.%d")
