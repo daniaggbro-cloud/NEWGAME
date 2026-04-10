@@ -1,32 +1,21 @@
 -- features/mvs.lua
 -- TumbaHub MVS Features (Elite Edition)
--- Implements ESP, Speed, Silent Aim, Kill Aura, and Skin Changer
+-- Syncing with Mega.States for UI integration
 
 getgenv().Mega = getgenv().Mega or {}
 local Mega = getgenv().Mega
 local Services = Mega.Services
 local Packages = Mega.Packages or {}
+local States = Mega.States
 
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
 
--- // SETTINGS (Initialize if not present)
-Mega.Settings = Mega.Settings or {
-    ESP = false,
-    AutoStab = false,
-    KillAura = false,
-    SilentAim = false,
-    SilentAimFOV = 150,
-    Speed = 16,
-    JumpPower = 50,
-    EquippedSkin = "Default"
-}
-
 -- // UTILS
 local function GetClosestPlayerToCursor()
     local target = nil
-    local dist = Mega.Settings.SilentAimFOV or 150
+    local dist = States.MVS.SilentAim.FOV
     
     for _, player in pairs(game:GetService("Players"):GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
@@ -51,8 +40,8 @@ FOVCircle.Filled = false
 FOVCircle.Transparency = 1
 
 game:GetService("RunService").RenderStepped:Connect(function()
-    FOVCircle.Visible = Mega.Settings.SilentAim
-    FOVCircle.Radius = Mega.Settings.SilentAimFOV
+    FOVCircle.Visible = States.MVS.SilentAim.Enabled
+    FOVCircle.Radius = States.MVS.SilentAim.FOV
     FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
 end)
 
@@ -62,7 +51,7 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local args = {...}
     local method = getnamecallmethod()
     
-    if Mega.Settings.SilentAim and method == "FireServer" and self.Name == (Packages.remotes and Packages.remotes.Shoot or "fire") then
+    if States.MVS.SilentAim.Enabled and method == "FireServer" and self.Name == (Packages.remotes and Packages.remotes.Shoot or "fire") then
         local target = GetClosestPlayerToCursor()
         if target and target.Character and target.Character:FindFirstChild("Head") then
             -- Redirect shot to target's head
@@ -77,8 +66,8 @@ end)
 -- // COMBAT: KILL AURA (Aura Stab)
 spawn(function()
     while task.wait(0.1) do
-        if Mega.Settings.KillAura then
-            local reach = 15
+        if States.MVS.KillAura.Enabled then
+            local reach = States.MVS.KillAura.Range or 15
             for _, player in pairs(game:GetService("Players"):GetPlayers()) do
                 if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                     local p_distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
@@ -108,18 +97,30 @@ function Mega.Skins.Equip(skinName)
     end
 end
 
+-- Monitor Skin Changer state for manual changes
+task.spawn(function()
+    local lastSkin = States.MVS.SkinChanger.SelectedSkin
+    while task.wait(0.5) do
+        if States.MVS.SkinChanger.Enabled and States.MVS.SkinChanger.SelectedSkin ~= lastSkin then
+            lastSkin = States.MVS.SkinChanger.SelectedSkin
+            Mega.Skins.Equip(lastSkin)
+        end
+    end
+end)
+
 -- // MOVEMENT FEATURES
 game:GetService("RunService").Heartbeat:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = Mega.Settings.Speed
-        LocalPlayer.Character.Humanoid.JumpPower = Mega.Settings.JumpPower
+        if States.Player.Speed then
+            LocalPlayer.Character.Humanoid.WalkSpeed = States.Player.SpeedValue
+        end
     end
 end)
 
 -- // VISUALS: ESP
 spawn(function()
     while task.wait(1) do
-        if Mega.Settings.ESP then
+        if States.MVS.ESP.Enabled then
             for _, player in pairs(game:GetService("Players"):GetPlayers()) do
                 if player ~= LocalPlayer and player.Character and not player.Character:FindFirstChild("MegaESP") then
                     local highlight = Instance.new("Highlight")
@@ -128,15 +129,17 @@ spawn(function()
                     highlight.FillColor = Color3.fromRGB(255, 255, 255)
                     highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
                     
-                    -- Dynamic coloring from metadata
                     task.spawn(function()
                         while player.Character and player.Character:FindFirstChild("MegaESP") do
+                            if not States.MVS.ESP.Enabled then highlight:Destroy(); break end
                             if player.TeamColor == LocalPlayer.TeamColor then
+                                highlight.Enabled = States.MVS.ESP.ShowInnocent
                                 highlight.FillColor = Color3.fromRGB(0, 255, 0)
                             else
+                                highlight.Enabled = States.MVS.ESP.ShowMurderer
                                 highlight.FillColor = Color3.fromRGB(255, 0, 0)
                             end
-                            task.wait(2)
+                            task.wait(1)
                         end
                     end)
                 end
@@ -145,4 +148,4 @@ spawn(function()
     end
 end)
 
-print("🛡️ MVS Elite Features Loaded!")
+print("🛡️ MVS Elite Features Synced with UI!")

@@ -140,8 +140,16 @@ function Mega.UI.CreateSlider(parent, textKey, statePath, min, max, callback)
     local function getState()
         local path = statePath
         local value = Mega.States
-        for part in path:gmatch("[^%.]+") do
-            value = value and value[part]
+        local parts = {}
+        for part in path:gmatch("[^%.]+") do table.insert(parts, part) end
+        
+        for i, part in ipairs(parts) do
+            if value and value[part] ~= nil then
+                value = value[part]
+            else
+                value = nil
+                break
+            end
         end
         return value or min
     end

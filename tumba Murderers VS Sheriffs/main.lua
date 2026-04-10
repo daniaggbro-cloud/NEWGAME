@@ -206,7 +206,16 @@ local function startGUI()
     UI.CreateSection(mvsTab, "section_mvs_main")
     UI.CreateToggle(mvsTab, "toggle_mvs_esp", "MVS.ESP.Enabled")
     UI.CreateToggle(mvsTab, "toggle_mvs_silent_aim", "MVS.SilentAim.Enabled")
+    UI.CreateSlider(mvsTab, "slider_mvs_fov", "MVS.SilentAim.FOV", 30, 800)
+    UI.CreateToggle(mvsTab, "toggle_mvs_kill_aura", "MVS.KillAura.Enabled")
     UI.CreateToggle(mvsTab, "toggle_mvs_autostab", "MVS.AutoStab.Enabled")
+
+    UI.CreateSection(mvsTab, "section_mvs_skins")
+    UI.CreateToggle(mvsTab, "toggle_mvs_skinchanger", "MVS.SkinChanger.Enabled")
+    -- In a real scenario, this would be a dropdown, but for now we use a toggle/input pattern or predefined high-tier skin
+    UI.CreateToggle(mvsTab, "toggle_equip_titan", "MVS.SkinChanger.SelectedSkin", function(state)
+        if state then Mega.States.MVS.SkinChanger.SelectedSkin = "TitanSword" else Mega.States.MVS.SkinChanger.SelectedSkin = "Default Knife" end
+    end)
 
     UI.CreateSection(mvsTab, "section_mvs_esp_settings")
     UI.CreateToggle(mvsTab, "toggle_mvs_show_murderer", "MVS.ESP.ShowMurderer")

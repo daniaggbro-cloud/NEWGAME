@@ -68,6 +68,14 @@ Mega.States = {
         AutoStab = {
             Enabled = false,
             Range = 15
+        },
+        KillAura = {
+            Enabled = false,
+            Range = 15
+        },
+        SkinChanger = {
+            Enabled = false,
+            SelectedSkin = "Default Knife"
         }
     },
     ESP = {
